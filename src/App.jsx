@@ -11,7 +11,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path='/' element={ <StockOverviewPage /> } />
-            <Route path='/details/:stock' element={ <StockDetailPage /> } />
+            <Route path='/details/:symbol' element={ <StockDetailPage /> } />
           </Routes>
         </BrowserRouter>
       </WatchListContextProvider>
