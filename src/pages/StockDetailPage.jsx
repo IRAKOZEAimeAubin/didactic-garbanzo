@@ -1,8 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import finnHub from '../APIs/finnHub'
+import StockChart from '../components/StockChart'
 
+const formatData = ( data ) => {
+  return data.t.map( ( el, index ) => {
+    return {
+      x: el * 1000,
+      y: data.c[ index ]
+    }
+  })
+}
 const StockDetailPage = () => {
+  const [ chartData, setChartData ] = useState()
   const { symbol } = useParams()
   useEffect( () => {
     const fetchData = async () => {
@@ -16,18 +26,51 @@ const StockDetailPage = () => {
       } else {
         oneDay = currentTime - 24 * 60 * 60
       }
-      const response = await finnHub.get( '/stock/candle', {
-        params: {
-          symbol,
-          from: oneDay,
-          to: currentTime,
-          resolution: 1
-        }
-      })
+      const oneWeek = currentTime - 7 * 24 * 60 * 60
+      const oneYear = currentTime - 365 * 24 * 60 * 60
+      try {
+        const responses = await Promise.all( [ finnHub.get( '/stock/candle', {
+          params: {
+            symbol,
+            from: oneDay,
+            to: currentTime,
+            resolution: 1
+          }
+        } ), finnHub.get( '/stock/candle', {
+          params: {
+            symbol,
+            from: oneWeek,
+            to: currentTime,
+            resolution: 30
+          }
+        } ), finnHub.get( '/stock/candle', {
+          params: {
+            symbol,
+            from: oneYear,
+            to: currentTime,
+            resolution: 'D'
+          }
+        } ) ] )
+        console.log( responses )
+        setChartData( {
+          day: formatData( responses[ 0 ].data ),
+          week: formatData( responses[ 1 ].data ),
+          year: formatData( responses[ 2 ].data )
+        } )
+      } catch (error) {
+        console.log(error)
+      }
     }
-  })
+    fetchData()
+  }, [ symbol ] )
   return (
-    <div>StockDetailPage { symbol }</div>
+    <div>
+      { chartData && (
+        <div>
+          <StockChart chartData={ chartData } symbol={ symbol } />
+        </div>
+      )}
+    </div>
   )
 }
 
